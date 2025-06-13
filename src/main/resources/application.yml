@@ -17,6 +17,7 @@ mybatis-plus:
   configuration:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
     map-underscore-to-camel-case: false
+
   global-config:
     db-config:
       logic-delete-field: isDelete
@@ -34,3 +35,10 @@ knife4j:
         api-rule: package
         api-rule-resources:
           - com.markpen.library.controller
+
+# 本地存储路径
+library:
+  file:
+    dir: ./storage/resources
+  comment:
+    dir: ./storage/comments

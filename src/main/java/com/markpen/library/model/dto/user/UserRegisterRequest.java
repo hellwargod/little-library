@@ -1,4 +1,4 @@
-package com.markpen.library.model.dto;
+package com.markpen.library.model.dto.user;
 
 import lombok.Data;
 
