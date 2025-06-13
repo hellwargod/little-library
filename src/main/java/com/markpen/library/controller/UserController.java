@@ -1,7 +1,9 @@
 package com.markpen.library.controller;
 
+import com.markpen.library.annotation.AuthCheck;
 import com.markpen.library.common.BaseResponse;
 import com.markpen.library.common.ResultUtils;
+import com.markpen.library.constant.UserConstant;
 import com.markpen.library.exception.ErrorCode;
 import com.markpen.library.exception.ThrowUtils;
 import com.markpen.library.model.dto.UserLoginRequest;
@@ -49,6 +51,7 @@ public class UserController {
         return ResultUtils.success(result);
     }
 
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     @PostMapping("/get/login")
     public BaseResponse<UserVO> getLoginUser(HttpServletRequest request){
         UserVO loginUser = userService.getLoginUser(request);
