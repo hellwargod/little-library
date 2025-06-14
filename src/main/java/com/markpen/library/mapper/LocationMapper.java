@@ -2,6 +2,8 @@ package com.markpen.library.mapper;
 
 import com.markpen.library.model.entity.Location;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 
 /**
 * @author markpen
@@ -10,7 +12,8 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 * @Entity com.markpen.library.model.entity.Location
 */
 public interface LocationMapper extends BaseMapper<Location> {
-
+    @Select("SELECT id FROM location WHERE locationName = #{locationName}")
+    Long getLocationIdByName(@Param("locationName") String locationName);
 }
 
 

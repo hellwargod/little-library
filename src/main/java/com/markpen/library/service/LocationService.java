@@ -65,4 +65,5 @@ public interface LocationService extends IService<Location> {
      * @return
      */
     List<LocationVO> getLocationVOList(List<Location> locationList);
+
 }

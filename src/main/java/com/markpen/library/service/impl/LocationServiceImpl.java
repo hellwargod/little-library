@@ -9,12 +9,12 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.markpen.library.exception.BusinessException;
 import com.markpen.library.exception.ErrorCode;
+import com.markpen.library.mapper.LibraryresourceMapper;
 import com.markpen.library.model.dto.location.LocationQueryRequest;
 import com.markpen.library.model.entity.Location;
 import com.markpen.library.model.vo.LocationVO;
 import com.markpen.library.service.LocationService;
 import com.markpen.library.mapper.LocationMapper;
-import com.markpen.library.service.ResourceService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -33,7 +33,7 @@ public class LocationServiceImpl extends ServiceImpl<LocationMapper, Location>
     implements LocationService{
 
     @Autowired
-    private ResourceService resourceService;
+    private LibraryresourceMapper libraryresourceMapper; // 使用 Mapper 替代 Service
 
     @Override
     public LocationVO locationCreate(String locationName, String geolocation) {
@@ -107,7 +107,7 @@ public class LocationServiceImpl extends ServiceImpl<LocationMapper, Location>
         }
 
         // 检查 resource 表中是否还有引用
-        Long count = resourceService.countByLocationId(location.getId());
+        long count = libraryresourceMapper.countByLocationId(location.getId());
         if (count > 0) {
             throw new BusinessException(ErrorCode.OPERATION_ERROR, "该地点下还有资源，无法删除");
         }
@@ -153,6 +153,7 @@ public class LocationServiceImpl extends ServiceImpl<LocationMapper, Location>
         }
         return locationList.stream().map(this::convertToV0).collect(Collectors.toList());
     }
+
 }
 
 

@@ -1,4 +1,4 @@
-package com.markpen.library.config;
+package com.markpen.library.constant;
 
 import lombok.Data;
 
@@ -8,6 +8,6 @@ import org.springframework.stereotype.Component;
 @Data
 @Component
 @ConfigurationProperties(prefix = "library.file")
-public class FileStorageConfig {
-    private String filePath;
+public class FileStorageConstant {
+    private String uploadDir;
 }

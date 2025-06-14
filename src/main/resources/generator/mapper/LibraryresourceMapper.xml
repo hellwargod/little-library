@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.markpen.library.mapper.LibraryresourceMapper">
+
+    <resultMap id="BaseResultMap" type="com.markpen.library.model.entity.LibraryResource">
+            <id property="id" column="id" />
+            <result property="archiveNumber" column="archiveNumber" />
+            <result property="title" column="title" />
+            <result property="type" column="type" />
+            <result property="contributor" column="contributor" />
+            <result property="locationId" column="locationId" />
+            <result property="fileUrl" column="fileUrl" />
+            <result property="coverUrl" column="coverUrl" />
+            <result property="commentPaths" column="commentPaths" />
+            <result property="description" column="description" />
+            <result property="size" column="size" />
+            <result property="downloadCount" column="downloadCount" />
+            <result property="createTime" column="createTime" />
+            <result property="updateTime" column="updateTime" />
+            <result property="isDelete" column="isDelete" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,archiveNumber,title,type,contributor,locationId,
+        fileUrl,coverUrl,commentPaths,description,size,
+        downloadCount,createTime,updateTime,isDelete
+    </sql>
+</mapper>

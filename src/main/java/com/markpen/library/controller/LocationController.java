@@ -84,7 +84,7 @@ public class LocationController {
      * @param locationQueryRequest 查询请求参数
      */
     @PostMapping("/list/page/vo")
-    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    @AuthCheck(mustRole = UserConstant.USER_LOGIN_STATE)
     public BaseResponse<Page<LocationVO>> listUserVOByPage(@RequestBody LocationQueryRequest locationQueryRequest) {
         ThrowUtils.throwIf(locationQueryRequest == null, ErrorCode.PARAMETER_ERROR);
         long current = locationQueryRequest.getCurrent();

@@ -1,17 +1,19 @@
 package com.markpen.library.model.entity;
 
-import com.baomidou.mybatisplus.annotation.*;
-
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
+import com.baomidou.mybatisplus.annotation.TableName;
 import java.util.Date;
 import lombok.Data;
 
 /**
  * 电子资料馆资源表
- * @TableName resource
+ * @TableName libraryresource
  */
-@TableName(value ="resource")
+@TableName(value ="libraryresource")
 @Data
-public class Resource {
+public class LibraryResource {
     /**
      * 资料ID
      */

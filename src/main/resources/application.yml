@@ -39,6 +39,6 @@ knife4j:
 # 本地存储路径
 library:
   file:
-    dir: ./storage/resources
+    upload-dir: storage/resources
   comment:
-    dir: ./storage/comments
+    upload-dir: storage/comments
