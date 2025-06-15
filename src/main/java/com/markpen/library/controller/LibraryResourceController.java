@@ -14,27 +14,34 @@ import com.markpen.library.model.dto.libraryResource.LibraryResourceQueryRequest
 import com.markpen.library.model.dto.libraryResource.LibraryResourceUpdateRequest;
 import com.markpen.library.model.entity.LibraryResource;
 import com.markpen.library.model.vo.LibraryResourceVO;
+import com.markpen.library.model.vo.UserVO;
 import com.markpen.library.service.LibraryresourceService;
+import com.markpen.library.service.impl.UserServiceImpl;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
 @RestController
 @RequestMapping("/Resource")
 public class LibraryResourceController {
 
-    @Resource
+    @Autowired
     private LibraryresourceService libraryresourceService;
+    @Autowired
+    private UserServiceImpl userServiceImpl;
 
     /**
      * 新增资料
      * @param title
      * @param type
      * @param contributor
-     * @param locationName
      * @param coverUrl
      * @param description
      * @param newFile
@@ -45,11 +52,14 @@ public class LibraryResourceController {
             @RequestPart("title") String title,
             @RequestPart("type") String type,
             @RequestPart("contributor") String contributor,
-            @RequestPart("locationName") String locationName,
             @RequestPart("coverUrl") String coverUrl,
             @RequestPart("description") String description,
-            @RequestPart("newFile") MultipartFile newFile) {
+            @RequestPart("newFile") MultipartFile newFile,
+            HttpServletRequest request) {
 
+        // 上传者锁定为当前登录用户
+        UserVO loginUser = userServiceImpl.getLoginUser(request);
+        String locationName = loginUser.getUserName();
         // 调用 Service 方法上传资源
         LibraryResourceVO result = libraryresourceService.uploadResource(
                 title, type, contributor, locationName, coverUrl, description, newFile);
@@ -113,5 +123,20 @@ public class LibraryResourceController {
         Page<LibraryResourceVO> voPage = libraryresourceService.getResourceVOPage(queryRequest);
 
         return ResultUtils.success(voPage);
+    }
+
+    /**
+     * 文件下载接口
+     */
+    @GetMapping("/download")
+    @AuthCheck(mustRole = UserConstant.USER_LOGIN_STATE)
+    public ResponseEntity<Resource> downloadFile(@RequestParam Long id) {
+        Resource resource = libraryresourceService.downloadResourceById(id);
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + resource.getFilename() + "\"")
+                .body(resource);
     }
 }

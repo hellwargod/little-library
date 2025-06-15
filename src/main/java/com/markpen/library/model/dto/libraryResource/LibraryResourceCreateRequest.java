@@ -14,8 +14,6 @@ public class LibraryResourceCreateRequest implements Serializable {
 
     private String type;
 
-    private String contributor;
-
     private String locationName;
 
     private MultipartFile file;

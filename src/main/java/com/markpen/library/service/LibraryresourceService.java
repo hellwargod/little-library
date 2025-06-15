@@ -9,6 +9,7 @@ import com.markpen.library.model.dto.libraryResource.LibraryResourceUpdateReques
 import com.markpen.library.model.entity.LibraryResource;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.markpen.library.model.vo.LibraryResourceVO;
+import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -78,4 +79,6 @@ public interface LibraryresourceService extends IService<LibraryResource> {
      * @return
      */
     LibraryResourceVO convertToVO(LibraryResource resource);
+
+    Resource downloadResourceById(Long id);
 }

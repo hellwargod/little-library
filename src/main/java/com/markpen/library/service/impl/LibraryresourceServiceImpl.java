@@ -17,6 +17,8 @@ import lombok.extern.slf4j.Slf4j;
 import com.markpen.library.service.LibraryresourceService;
 import com.markpen.library.mapper.LibraryresourceMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -121,7 +123,7 @@ public class LibraryresourceServiceImpl extends ServiceImpl<LibraryresourceMappe
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "文件上传失败");
         }
 
-        String fileUrl = "/api/file/" + storedFileName;
+        String fileUrl = storedFileName;
 
         // 计算文件大小
         long fileSize = file.getSize();
@@ -302,6 +304,38 @@ public class LibraryresourceServiceImpl extends ServiceImpl<LibraryresourceMappe
         LibraryResourceVO vo = new LibraryResourceVO();
         BeanUtil.copyProperties(resource, vo);
         return vo;
+    }
+
+    /**
+     * 获取文件 Resource 并更新下载次数
+     */
+    @Override
+    public Resource downloadResourceById(Long id){
+        // 1. 查询资源是否存在
+        LibraryResource resource = this.getById(id);
+        if (resource == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "资源不存在");
+        }
+
+        // 获取项目根目录
+        String projectRoot = Paths.get("").toAbsolutePath().toString();
+        // 拼接路径
+        Path filePath = Paths.get(projectRoot, fileStorageConstant.getUploadDir(), resource.getFileUrl()).normalize();
+
+        // 使用 FileSystemResource 来加载文件
+        Resource fileResource = new FileSystemResource(filePath);
+
+        log.info("尝试下载文件: {}", filePath.toAbsolutePath());
+
+        if (!fileResource.exists() || !fileResource.isReadable()) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "文件不存在或不可读");
+        }
+
+        // 3. 更新下载次数
+        resource.setDownloadCount((resource.getDownloadCount() == null ? 0 : resource.getDownloadCount()) + 1);
+        this.updateById(resource);
+
+        return fileResource;
     }
 }
 
