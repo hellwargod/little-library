@@ -10,4 +10,6 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "library.file")
 public class FileStorageConstant {
     private String uploadDir;
+
+    private String commentDir;
 }

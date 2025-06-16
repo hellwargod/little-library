@@ -81,4 +81,9 @@ public interface LibraryresourceService extends IService<LibraryResource> {
     LibraryResourceVO convertToVO(LibraryResource resource);
 
     Resource downloadResourceById(Long id);
+
+    // 评论区
+    boolean addCommentById(String commentText, Long resourceId, Long commentUserId, String commentUserName) throws IOException;
+
+    Resource getCommentById(Long resourceId);
 }

@@ -1,18 +1,22 @@
 package com.markpen.library.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.lang.TypeReference;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.markpen.library.constant.FileStorageConstant;
 import com.markpen.library.exception.BusinessException;
 import com.markpen.library.exception.ErrorCode;
 import com.markpen.library.mapper.LocationMapper;
 import com.markpen.library.model.dto.libraryResource.LibraryResourceQueryRequest;
+import com.markpen.library.model.entity.Comment;
 import com.markpen.library.model.entity.LibraryResource;
 import com.markpen.library.model.vo.LibraryResourceVO;
+import com.markpen.library.model.vo.UserVO;
 import lombok.extern.slf4j.Slf4j;
 import com.markpen.library.service.LibraryresourceService;
 import com.markpen.library.mapper.LibraryresourceMapper;
@@ -29,6 +33,8 @@ import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -336,6 +342,97 @@ public class LibraryresourceServiceImpl extends ServiceImpl<LibraryresourceMappe
         this.updateById(resource);
 
         return fileResource;
+    }
+
+
+    // 评论区
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+
+    @Override
+    public boolean addCommentById(String commentText, Long resourceId, Long commentUserId,String commentUserName) throws IOException {
+        if (resourceId == null || commentUserId == null || commentText == null) {
+            throw new BusinessException(ErrorCode.PARAMETER_ERROR, "参数不能为空");
+        }
+
+        LibraryResource resource = this.getById(resourceId);
+        if (resource == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "资源不存在");
+        }
+
+        // 构建文件路径
+        String projectRoot = Paths.get("").toAbsolutePath().toString();
+        Path commentDirPath = Paths.get(projectRoot, fileStorageConstant.getCommentDir()).normalize();
+
+        if (!Files.exists(commentDirPath)) {
+            Files.createDirectories(commentDirPath); // 创建目录
+        }
+
+        Path commentFilePath = commentDirPath.resolve(resourceId + ".json").normalize();
+
+        List<Comment> comments = new ArrayList<>();
+
+        // 如果文件存在，读取已有评论
+        if (Files.exists(commentFilePath)) {
+            byte[] bytes = Files.readAllBytes(commentFilePath);
+            String json = new String(bytes);
+            if (!json.trim().isEmpty()) {
+                Comment[] commentArray = objectMapper.readValue(json, Comment[].class);
+                comments.addAll(Arrays.asList(commentArray));
+            }
+        }
+
+
+        // 添加新评论
+        Comment newComment = new Comment();
+        newComment.setId(UUID.randomUUID().toString());
+        newComment.setUserId(commentUserId);
+        newComment.setUsername(commentUserName);
+        newComment.setContent(commentText);
+        newComment.setTimestamp(System.currentTimeMillis());
+
+        comments.add(newComment);
+
+        // 写回文件
+        String updatedJson = objectMapper.writeValueAsString(comments);
+        Files.write(commentFilePath, updatedJson.getBytes());
+
+        // 更新数据库字段
+        resource.setCommentPaths("/api/comment/" + resourceId + ".json");
+        this.updateById(resource);
+
+        return true;
+    }
+
+    @Override
+    public Resource getCommentById(Long resourceId){
+        // 校验参数
+        if (resourceId == null) {
+            throw new BusinessException(ErrorCode.PARAMETER_ERROR, "资源ID不能为空");
+        }
+
+        // 查询资源是否存在
+        LibraryResource resource = this.getById(resourceId);
+        if (resource == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "资源不存在");
+        }
+
+        // 获取评论路径
+        String commentPath = resource.getCommentPaths();
+        if (StrUtil.isBlank(commentPath)) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "该资源暂无评论");
+        }
+
+        // 解析评论文件路径
+        String projectRoot = Paths.get("").toAbsolutePath().toString();
+        Path commentFilePath = Paths.get(projectRoot, fileStorageConstant.getCommentDir(), resourceId + ".json").normalize();
+
+        // 加载评论文件
+        Resource commentResource = new FileSystemResource(commentFilePath.toFile());
+        if (!commentResource.exists()) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "评论文件不存在");
+        }
+
+        return commentResource;
     }
 }
 

@@ -6,6 +6,7 @@ import com.markpen.library.annotation.AuthCheck;
 import com.markpen.library.common.BaseResponse;
 import com.markpen.library.common.ResultUtils;
 import com.markpen.library.constant.UserConstant;
+import com.markpen.library.exception.BusinessException;
 import com.markpen.library.exception.ErrorCode;
 import com.markpen.library.exception.ThrowUtils;
 import com.markpen.library.model.dto.libraryResource.LibraryResourceCreateRequest;
@@ -17,7 +18,11 @@ import com.markpen.library.model.vo.LibraryResourceVO;
 import com.markpen.library.model.vo.UserVO;
 import com.markpen.library.service.LibraryresourceService;
 import com.markpen.library.service.impl.UserServiceImpl;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -26,7 +31,16 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.List;
+import javax.servlet.http.HttpServletResponse;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 @RestController
 @RequestMapping("/Resource")
@@ -40,8 +54,7 @@ public class LibraryResourceController {
     /**
      * 新增资料
      * @param title
-     * @param type
-     * @param contributor
+     * @param locationName
      * @param coverUrl
      * @param description
      * @param newFile
@@ -50,16 +63,23 @@ public class LibraryResourceController {
     @PostMapping(path = "/create", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public BaseResponse<LibraryResourceVO> createResource(
             @RequestPart("title") String title,
-            @RequestPart("type") String type,
-            @RequestPart("contributor") String contributor,
-            @RequestPart("coverUrl") String coverUrl,
-            @RequestPart("description") String description,
+            @RequestPart("locationName") String locationName,
+            @RequestPart(value = "coverUrl", required = false) String coverUrl,
+            @RequestPart(value = "description", required = false) String description,
             @RequestPart("newFile") MultipartFile newFile,
             HttpServletRequest request) {
 
-        // 上传者锁定为当前登录用户
+        // contributor锁定为当前登录用户
         UserVO loginUser = userServiceImpl.getLoginUser(request);
-        String locationName = loginUser.getUserName();
+        String contributor = loginUser.getUserName();
+
+        // 自动获取文字后缀
+        String originalFilename = newFile.getOriginalFilename();
+        String type = "";
+        if (originalFilename != null && originalFilename.contains(".")) {
+            type = originalFilename.substring(originalFilename.lastIndexOf(".") + 1).toLowerCase();
+        }
+
         // 调用 Service 方法上传资源
         LibraryResourceVO result = libraryresourceService.uploadResource(
                 title, type, contributor, locationName, coverUrl, description, newFile);
@@ -125,18 +145,85 @@ public class LibraryResourceController {
         return ResultUtils.success(voPage);
     }
 
-    /**
-     * 文件下载接口
-     */
+
+
     @GetMapping("/download")
     @AuthCheck(mustRole = UserConstant.USER_LOGIN_STATE)
-    public ResponseEntity<Resource> downloadFile(@RequestParam Long id) {
-        Resource resource = libraryresourceService.downloadResourceById(id);
+    public void downloadFile(@RequestParam Long id, HttpServletResponse response) {
+        try {
+            // 调用 Service 获取 Resource
+            Resource resource = libraryresourceService.downloadResourceById(id);
+
+            // 设置响应头
+            response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
+            String filename = URLEncoder.encode(resource.getFilename(), StandardCharsets.UTF_8.name());
+            response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"");
+
+            // 设置 Content-Length（如果知道文件大小的话）
+            if (resource.contentLength() > 0) {
+                response.setContentLengthLong(resource.contentLength());
+            }
+
+            // 流式输出文件内容
+            try (InputStream is = resource.getInputStream();
+                 OutputStream os = response.getOutputStream()) {
+
+                byte[] buffer = new byte[4096];
+                int bytesRead;
+                while ((bytesRead = is.read(buffer)) != -1) {
+                    os.write(buffer, 0, bytesRead);
+                }
+            }
+
+        } catch (IOException e) {
+            throw new BusinessException(ErrorCode.OPERATION_ERROR, "传输失败");
+        }
+    }
+
+    /**
+     * 新增评论
+     *
+     * @param resourceId 资源ID
+     * @param commentText 评论内容
+     * @param request 当前登录用户信息
+     * @return 成功提示
+     */
+    @PostMapping("/addComment")
+    @AuthCheck(mustRole = UserConstant.USER_LOGIN_STATE)
+    public BaseResponse<String> addComment(
+            @RequestParam("resourceId") Long resourceId,
+            @RequestParam("commentText") String commentText,
+            HttpServletRequest request) throws IOException {
+
+        // 获取当前登录用户
+        UserVO loginUser = userServiceImpl.getLoginUser(request);
+        Long userId = loginUser.getId();
+        String userName = loginUser.getUserName();
+
+        // 调用服务层添加评论
+        boolean result = libraryresourceService.addCommentById(commentText, resourceId, userId, userName);
+
+        if (!result) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "评论失败");
+        }
+
+        return ResultUtils.success("评论成功");
+    }
+
+    /**
+     * 获取资源的评论内容（返回 JSON 文件）
+     *
+     * @param resourceId 资源ID
+     * @return 返回评论文件 Resource
+     */
+    @GetMapping("/getComment")
+    @AuthCheck(mustRole = UserConstant.USER_LOGIN_STATE)
+    public ResponseEntity<Resource> getComment(@RequestParam("resourceId") Long resourceId) {
+        // 调用服务层获取评论文件
+        Resource commentResource = libraryresourceService.getCommentById(resourceId);
 
         return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=\"" + resource.getFilename() + "\"")
-                .body(resource);
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(commentResource);
     }
 }
