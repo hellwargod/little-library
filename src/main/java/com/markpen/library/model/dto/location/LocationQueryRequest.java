@@ -11,7 +11,7 @@ import java.io.Serializable;
 public class LocationQueryRequest extends PageRequest implements Serializable {
     private static final long serialVersionUID = 3125L;
 
-    private Long id;
+    private String id;
 
     private String locationName;
 

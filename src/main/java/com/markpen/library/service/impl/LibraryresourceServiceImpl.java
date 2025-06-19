@@ -268,12 +268,14 @@ public class LibraryresourceServiceImpl extends ServiceImpl<LibraryresourceMappe
 
     @Override
     public Page<LibraryResourceVO> getResourceVOPage(LibraryResourceQueryRequest queryRequest) {
+
         if (queryRequest == null) {
             throw new BusinessException(ErrorCode.PARAMETER_ERROR, "请求参数为空");
         }
 
         int current = queryRequest.getCurrent();
         int pageSize = queryRequest.getPageSize();
+        Long id = Long.valueOf(queryRequest.getId());
         String title = queryRequest.getTitle();
         String type = queryRequest.getType();
         String contributor = queryRequest.getContributor();
@@ -281,8 +283,13 @@ public class LibraryresourceServiceImpl extends ServiceImpl<LibraryresourceMappe
         String sortField = queryRequest.getSortField();
         String sortOrder = queryRequest.getSortOrder();
 
+
         // 构造查询条件
         Wrapper<LibraryResource> wrapper = buildQueryWrapper(title, type, contributor, locationName, sortField, sortOrder);
+
+        if (queryRequest.getId() != null && id > 0) {
+            ((QueryWrapper<LibraryResource>) wrapper).eq("id", id);
+        }
 
         // 分页查询
         Page<LibraryResource> resourcePage = this.page(new Page<>(current, pageSize), wrapper);

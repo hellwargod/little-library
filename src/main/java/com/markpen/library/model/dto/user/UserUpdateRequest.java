@@ -3,11 +3,24 @@ package com.markpen.library.model.dto.user;
 import lombok.Data;
 
 import java.io.Serializable;
+
 @Data
-public class UserLoginRequest implements Serializable {
+public class UserUpdateRequest implements Serializable {
     private static final long serialVersionUID = 3125L;
 
-    private String userAccount;
+    /**
+     * 用户昵称
+     */
+    private String userName;
 
-    private String userPassword;
+    /**
+     * 用户头像
+     */
+    private String userAvatar;
+
+    /**
+     * 用户简介
+     */
+    private String userProfile;
+
 }

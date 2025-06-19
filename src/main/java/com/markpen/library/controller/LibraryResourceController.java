@@ -2,6 +2,8 @@ package com.markpen.library.controller;
 
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.markpen.library.annotation.AuthCheck;
 import com.markpen.library.common.BaseResponse;
 import com.markpen.library.common.ResultUtils;
@@ -13,6 +15,7 @@ import com.markpen.library.model.dto.libraryResource.LibraryResourceCreateReques
 import com.markpen.library.model.dto.libraryResource.LibraryResourceDeleteRequest;
 import com.markpen.library.model.dto.libraryResource.LibraryResourceQueryRequest;
 import com.markpen.library.model.dto.libraryResource.LibraryResourceUpdateRequest;
+import com.markpen.library.model.entity.Comment;
 import com.markpen.library.model.entity.LibraryResource;
 import com.markpen.library.model.vo.LibraryResourceVO;
 import com.markpen.library.model.vo.UserVO;
@@ -41,6 +44,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 
 @RestController
 @RequestMapping("/Resource")
@@ -99,7 +103,7 @@ public class LibraryResourceController {
         ThrowUtils.throwIf(updateRequest == null, ErrorCode.PARAMETER_ERROR);
 
         LibraryResourceVO result = libraryresourceService.updateResource(
-                updateRequest.getId(),
+                Long.valueOf(updateRequest.getId()),
                 updateRequest.getNewTitle(),
                 updateRequest.getNewType(),
                 updateRequest.getNewContributor(),
@@ -123,7 +127,7 @@ public class LibraryResourceController {
     public BaseResponse<Boolean> deleteResource(@RequestBody LibraryResourceDeleteRequest  deleteRequest) {
         ThrowUtils.throwIf(deleteRequest == null, ErrorCode.PARAMETER_ERROR);
 
-        boolean result = libraryresourceService.deleteResource(deleteRequest.getId());
+        boolean result = libraryresourceService.deleteResource(Long.valueOf(deleteRequest.getId()));
 
         return ResultUtils.success(result);
     }
@@ -149,10 +153,11 @@ public class LibraryResourceController {
 
     @GetMapping("/download")
     @AuthCheck(mustRole = UserConstant.USER_LOGIN_STATE)
-    public void downloadFile(@RequestParam Long id, HttpServletResponse response) {
+    public void downloadFile(@RequestParam String id, HttpServletResponse response) {
         try {
             // 调用 Service 获取 Resource
-            Resource resource = libraryresourceService.downloadResourceById(id);
+
+            Resource resource = libraryresourceService.downloadResourceById(Long.valueOf(id));
 
             // 设置响应头
             response.setContentType(MediaType.APPLICATION_OCTET_STREAM_VALUE);
@@ -191,7 +196,7 @@ public class LibraryResourceController {
     @PostMapping("/addComment")
     @AuthCheck(mustRole = UserConstant.USER_LOGIN_STATE)
     public BaseResponse<String> addComment(
-            @RequestParam("resourceId") Long resourceId,
+            @RequestParam("resourceId") String resourceId,
             @RequestParam("commentText") String commentText,
             HttpServletRequest request) throws IOException {
 
@@ -201,7 +206,7 @@ public class LibraryResourceController {
         String userName = loginUser.getUserName();
 
         // 调用服务层添加评论
-        boolean result = libraryresourceService.addCommentById(commentText, resourceId, userId, userName);
+        boolean result = libraryresourceService.addCommentById(commentText, Long.valueOf(resourceId), userId, userName);
 
         if (!result) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "评论失败");
@@ -218,12 +223,21 @@ public class LibraryResourceController {
      */
     @GetMapping("/getComment")
     @AuthCheck(mustRole = UserConstant.USER_LOGIN_STATE)
-    public ResponseEntity<Resource> getComment(@RequestParam("resourceId") Long resourceId) {
-        // 调用服务层获取评论文件
-        Resource commentResource = libraryresourceService.getCommentById(resourceId);
+    public BaseResponse<List<Comment>> getComment(@RequestParam("resourceId") String resourceId) {
+        // 获取评论（从文件中读取 JSON → 解析成 List<Comment>）
+        Resource commentResource = libraryresourceService.getCommentById(Long.valueOf(resourceId));
 
-        return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(commentResource);
+        try (InputStream inputStream = commentResource.getInputStream()) {
+            // 假设文件内容是 JSON 数组，使用 Jackson 解析
+            ObjectMapper objectMapper = new ObjectMapper();
+            List<Comment> commentList = objectMapper.readValue(
+                    inputStream,
+                    new TypeReference<List<Comment>>() {}
+            );
+            return ResultUtils.success(commentList);
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "读取评论文件失败");
+        }
     }
 }

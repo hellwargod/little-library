@@ -8,6 +8,6 @@ import java.io.Serializable;
 public class LibraryResourceDeleteRequest implements Serializable {
     private static final long serialVersionUID = 3125L;
 
-    private Long id;
+    private String id;
 
 }

@@ -10,7 +10,7 @@ public class LibraryResourceUpdateRequest implements Serializable {
     private static final long serialVersionUID = 3125L;
 
 
-    private Long id;
+    private String id;
 
     private String newTitle;
     private String newType;

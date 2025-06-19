@@ -1,0 +1,188 @@
+<script setup>
+import router from '@/router'
+import { ref, toRaw } from 'vue'
+// 搜索逻辑
+let input = ref("")
+let keyEntered = ref(false)
+function searchKeyword(keyword) {
+    console.log("Searching for:", keyword)
+    keyEntered.value = true
+    // 搜索逻辑待添加
+}
+
+// 数据展示逻辑
+const tableData = [
+    {
+        id: "1",
+        title: "关于yqx是sb的充分性证明————从社会学视角出发",
+        type: "doc",
+        size: "1.2MB",
+        updatetime: "2023-10-01 12:00:00",
+        downloadtimes: 100,
+        url: "https://www.baidu.com"
+    },
+    {
+        id: "2",
+        title: "关于yqx是sb的充分性证明————从生理学视角出发",
+        type: "doc",
+        size: "1.5MB",
+        updatetime: "2023-10-05 13:30:10",
+        downloadtimes: 90,
+        url: "https://www.baidu.com"
+    },
+    {
+        id: "3",
+        title: "关于yqx是sb的充分性证明————从心理学视角出发",
+        type: "doc",
+        size: "2.0MB",
+        updatetime: "2023-10-10 15:45:20",
+        downloadtimes: 80,
+        url: "https://www.baidu.com"
+    },
+    {
+        id: "4",
+        title: "关于yqx是sb的充分性证明————从哲学视角出发",
+        type: "doc",
+        size: "1.8MB",
+        updatetime: "2023-10-15 17:20:30",
+        downloadtimes: 150,
+        url: "https://www.baidu.com"
+    },
+    {
+        id: "5",
+        title: "关于yqx是sb的充分性证明————从政治学视角出发",
+        type: "doc",
+        size: "2.3MB",
+        updatetime: "2023-10-20 19:10:40",
+        downloadtimes: 120,
+        url: "https://www.baidu.com"
+    },
+    {
+        id: "6",
+        title: "关于yqx是sb的充分性证明————从经济学视角出发",
+        type: "doc",
+        size: "1.9MB",
+        updatetime: "2023-10-25 21:05:50",
+        downloadtimes: 110,
+        url: "https://www.baidu.com"
+    },
+    {
+        id: "7",
+        title: "关于yqx是sb的充分性证明————从历史学视角出发",
+        type: "doc",
+        size: "2.1MB",
+        updatetime: "2020-10-30 23:00:00",
+        downloadtimes: 130,
+        url: "https://www.baidu.com"
+    },
+    {
+        id: "8",
+        title: "关于yqx是sb的充分性证明————从地理学视角出发",
+        type: "doc",
+        size: "1.6MB",
+        updatetime: "2024-11-01 10:30:00",
+        downloadtimes: 140,
+        url: "https://www.baidu.com"
+    },
+    {
+        id: "9",
+        title: "关于yqx是sb的充分性证明————从数学视角出发",
+        type: "doc",
+        size: "2.4MB",
+        updatetime: "2022-11-05 12:15:00",
+        downloadtimes: 160,
+        url: "https://www.baidu.com"
+    },
+    {
+        id: "10",
+        title: "关于yqx是sb的充分性证明————从物理学视角出发",
+        type: "doc",
+        size: "1.7MB",
+        updatetime: "2023-11-10 14:45:00",
+        downloadtimes: 170,
+        url: "https://www.baidu.com"
+    },
+    {
+        id: "11",
+        title: "关于yqx是sb的充分性证明————从化学视角出发",
+        type: "doc",
+        size: "2.2MB",
+        updatetime: "2023-11-15 16:20:00",
+        downloadtimes: 180,
+        url: "https://www.baidu.com"
+    },
+    {
+        id: "12",
+        title: "关于yqx是sb的充分性证明————从生物学视角出发",
+        type: "doc",
+        size: "1.4MB",
+        updatetime: "2021-11-20 18:00:00",
+        downloadtimes: 50,
+        url: "https://www.baidu.com"
+    }
+]
+
+function gotoDetail(id) {
+    router.push({
+        name: "detailpage",
+        params: { resourceId: id }
+    })
+}
+
+// 分页逻辑
+let totalRows = ref(tableData.length)
+let rowsInOnePage = ref(10)
+let currentPage = ref(1)
+let slicedTableData = ref(tableData.slice(0, rowsInOnePage.value))
+function changePage() {
+    const start = (currentPage.value - 1) * rowsInOnePage.value
+    const end = start + rowsInOnePage.value
+    slicedTableData.value = tableData.slice(start, end)
+    console.log("page changed to:", currentPage.value)
+}
+</script>
+
+<template>
+    <div class="search-container">
+        <div class="search-box">
+            <div class="input-box">
+                <el-input class="keyword-input" v-model="input" placeholder="请输入关键词"
+                    style="--el-input-focus-border-color:#0000CD" clearable @keyup.enter="searchKeyword(input)">
+                </el-input>
+                <el-button color="#0000CD" class="search-button" @click="searchKeyword(input)">
+                    <el-icon>
+                        <Search />
+                    </el-icon>
+                    检索
+                </el-button>
+            </div>
+            <div v-show="keyEntered" class="table-box">
+                <el-table :data="toRaw(slicedTableData)" stripe style="width: 100%" show-overflow-tooltip>
+                    <el-table-column prop="title" label="标题" sortable />
+                    <el-table-column prop="updatetime" label="最近更新" sortable />
+                    <el-table-column prop="type" label="类型" />
+                    <el-table-column prop="size" label="大小" sortable />
+                    <el-table-column prop="downloadtimes" label="下载" sortable />
+                    <el-table-column label="详情">
+                        <template #default="scope">
+                            <el-button color="#0000CD" @click="gotoDetail(scope.row.id)">
+                                <el-icon>
+                                    <View />
+                                </el-icon>
+                                查看
+                            </el-button>
+                        </template>
+                    </el-table-column>
+                    <template #empty>
+                        <div>暂无相关数据</div>
+                    </template>
+                </el-table>
+            </div>
+            <div v-show="keyEntered" class="pagination-box">
+                <el-pagination background v-model:current-page="currentPage" :page-size="rowsInOnePage"
+                    layout="prev, pager, next" :total="totalRows" hide-on-single-page
+                    style="--el-color-primary: #0000CD" @current-change="changePage()" />
+            </div>
+        </div>
+    </div>
+</template>

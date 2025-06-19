@@ -8,12 +8,10 @@ import com.markpen.library.exception.ErrorCode;
 import com.markpen.library.exception.ThrowUtils;
 import com.markpen.library.model.dto.user.UserLoginRequest;
 import com.markpen.library.model.dto.user.UserRegisterRequest;
+import com.markpen.library.model.dto.user.UserUpdateRequest;
 import com.markpen.library.model.vo.UserVO;
 import com.markpen.library.service.UserService;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -51,8 +49,8 @@ public class UserController {
         return ResultUtils.success(result);
     }
 
-    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
-    @PostMapping("/get/login")
+    @AuthCheck(mustRole = UserConstant.USER_LOGIN_STATE)
+    @GetMapping("/get/login")
     public BaseResponse<UserVO> getLoginUser(HttpServletRequest request){
         UserVO loginUser = userService.getLoginUser(request);
         return ResultUtils.success(loginUser);
@@ -63,6 +61,20 @@ public class UserController {
         ThrowUtils.throwIf(request==null, ErrorCode.PARAMETER_ERROR);
         boolean result = userService.userLogout(request);
         return ResultUtils.success(result);
+    }
+
+    /**
+     * 用户信息更新接口
+     */
+    @PostMapping("/update")
+    @AuthCheck(mustRole = UserConstant.USER_LOGIN_STATE)
+    public BaseResponse<UserVO> updateUser(
+            @RequestBody UserUpdateRequest userUpdateRequest, HttpServletRequest request) {
+        String userName = userUpdateRequest.getUserName();
+        String userAvatar = userUpdateRequest.getUserAvatar();
+        String userProfile = userUpdateRequest.getUserProfile();
+        UserVO updatedUserVO = userService.userUpdate(userName, userAvatar, userProfile, request);
+        return ResultUtils.success(updatedUserVO);
     }
 
 }

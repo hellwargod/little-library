@@ -59,4 +59,5 @@ public interface UserService extends IService<User> {
      */
     boolean userLogout(HttpServletRequest request);
 
+    UserVO userUpdate(String userName, String userAvatar, String userProfile, HttpServletRequest request);
 }

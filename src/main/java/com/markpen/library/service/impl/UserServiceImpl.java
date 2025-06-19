@@ -143,6 +143,39 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         request.getSession().removeAttribute(USER_LOGIN_STATE);
         return true;
     }
+
+    @Override
+    public UserVO userUpdate(String userName, String userAvatar, String userProfile, HttpServletRequest request) {
+        // 使用 getLoginUser 获取当前登录用户
+        UserVO currentUserVO = this.getLoginUser(request);
+        Long userId = currentUserVO.getId();
+
+        // 查询数据库中的用户
+        User user = this.getById(userId);
+        if (user == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR, "用户不存在");
+        }
+
+        // 更新字段（非空才更新）
+        if (StrUtil.isNotBlank(userName)) {
+            user.setUserName(userName);
+        }
+        if (StrUtil.isNotBlank(userAvatar)) {
+            user.setUserAvatar(userAvatar); // 假设是图片 URL
+        }
+        if (StrUtil.isNotBlank(userProfile)) {
+            user.setUserProfile(userProfile);
+        }
+
+        // 保存到数据库
+        boolean updateResult = this.updateById(user);
+        if (!updateResult) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "更新失败");
+        }
+
+        // 返回更新后的 VO
+        return this.getUserVO(user);
+    }
 }
 
 

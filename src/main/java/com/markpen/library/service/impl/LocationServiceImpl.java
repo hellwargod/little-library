@@ -131,7 +131,7 @@ public class LocationServiceImpl extends ServiceImpl<LocationMapper, Location>
         if(locationQueryRequest == null){
             throw new BusinessException(ErrorCode.PARAMETER_ERROR,"请求参数为空");
         }
-        Long id =locationQueryRequest.getId();
+        Long id =Long.valueOf(locationQueryRequest.getId());
         String locationName = locationQueryRequest.getLocationName();
         String geolocation = locationQueryRequest.getGeolocation();
         String sortField = locationQueryRequest.getSortField();
